@@ -1,0 +1,71 @@
+<?php
+
+macro ·recursion {
+    ·chain(
+        ·either(
+        	·variable()·singleArg,
+        	·chain(
+        		·token('('),
+    			·ls(·variable(), ·token(','))·multiArgs,
+    			·token(')')
+    		)
+        )·args,
+        ·token(T_DOUBLE_ARROW),
+        ·expr()·body
+    )
+} >> function($ast) {
+    $fnArgs = array_reduce(
+        $ast->{'·args'}['·multiArgs'] ?? [] + [$ast->{'·args'}['·singleArg']],
+        function ($result, $arg) { return $result->push(new \Yay\Ast('·arg', $arg)); },
+        new \Yay\Ast('·fnArgs')
+    );
+
+    $ast->append($fnArgs);
+
+    $flatten = function ($array) use (&$flatten) {
+        return array_reduce($array, function ($result, $item) use ($flatten) {
+            return array_merge($result, is_array($item) ? $flatten($item) : [$item]);
+        }, []);
+    };
+
+    $scope = array_reduce(
+        $flatten($ast->{'·body'}),
+        function ($result, $token) use ($fnArgs) {
+            if ($token->is(T_VARIABLE)
+              && $token->value() !== '$this'
+              && empty(array_filter($fnArgs->array(), function ($var) use ($token) {
+                  return $var['·arg']->value() == $token->value();
+              }))
+              && empty(array_filter($result->array(), function ($var) use ($token) {
+                  return $var['·var']->value() == $token->value();
+              }))
+            ) {
+                return $result->push(new \Yay\Ast('·var', $token));
+            } else {
+                return $result;
+            }
+        },
+        new \Yay\Ast('·scope')
+    );
+
+    if (! $scope->isEmpty()) {
+        $ast->append($scope);
+    } else {
+        $simple = new \Yay\Ast('·simple');
+        $simple->push(new \Yay\Ast());
+
+        $ast->append($simple);
+    }
+} >> {··trim(
+    ·scope ?·{
+        [·scope ···(, ) { ·var = ·var ?? null}, 'fn' => ··trim(function (·fnArgs ···(, ) {·arg}) use (··trim(·scope ···(, ) {&·var}))) {
+            ··trim(return ·body;)
+        }]['fn']
+    }
+
+    ·simple ?·{
+        function (·fnArgs ···(, ) {·arg}) {
+			··trim(return ·body;)
+        }
+    }
+)}

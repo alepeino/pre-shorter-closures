@@ -1,0 +1,28 @@
+{
+    "type": "pre-macro",
+    "name": "pre/shorter-closures",
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/MarcelloDuarte/yay"
+        }
+    ],
+    "require": {
+        "yay/yay": "dev-feature/expression-parser as 0.2",
+        "pre/plugin": "^0.7.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.0|^6.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pre\\ShorterClosures\\": "tests"
+        }
+    },
+    "extra": {
+        "macros": [
+            "src/macros.yay"
+        ]
+    }
+}
